@@ -65,7 +65,20 @@ class DataManager:
         # Only use pin_memory if CUDA is available
         self.use_pin_memory = torch.cuda.is_available()
         
-        # Standard preprocessing for MNIST
+        # Training transform with data augmentation
+        # Augmentation helps the model generalize to different writing styles
+        self.mnist_train_transform = transforms.Compose([
+            transforms.RandomRotation(10),  # ±10 degrees rotation
+            transforms.RandomAffine(
+                degrees=0,
+                translate=(0.1, 0.1),  # ±10% shift
+                scale=(0.9, 1.1),  # ±10% scale
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))  # MNIST mean and std
+        ])
+        
+        # Standard preprocessing for MNIST test (no augmentation)
         self.mnist_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.1307,), (0.3081,))  # MNIST mean and std
@@ -96,14 +109,14 @@ class DataManager:
             root=self.data_dir,
             train=True,
             download=True,
-            transform=self.mnist_transform
+            transform=self.mnist_train_transform  # Use augmented transform
         )
         
         self.mnist_test = datasets.MNIST(
             root=self.data_dir,
             train=False,
             download=True,
-            transform=self.mnist_transform
+            transform=self.mnist_transform  # No augmentation for test
         )
         
         print(f"    Train: {len(self.mnist_train):,} images")

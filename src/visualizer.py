@@ -456,15 +456,17 @@ class Visualizer:
         x_jitter = np.random.normal(1, 0.04, size=len(accuracies))
         axes[1].scatter(x_jitter, accuracies, alpha=0.5, color='darkblue', s=20, zorder=3)
         
-        # Add statistics text
+        # Add statistics text box - positioned at top left inside the plot
         stats_text = (
             f"Mean: {stability_results['mean']:.2f}%\n"
             f"Std:  {stability_results['std']:.2f}%\n"
             f"Min:  {stability_results['min']:.2f}%\n"
             f"Max:  {stability_results['max']:.2f}%"
         )
-        axes[1].text(1.4, stability_results['mean'], stats_text, fontsize=10,
-                    verticalalignment='center', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        axes[1].text(0.02, 0.98, stats_text, fontsize=11, fontweight='bold',
+                    transform=axes[1].transAxes, verticalalignment='top',
+                    bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow', 
+                             edgecolor='gray', alpha=0.9))
         
         axes[1].set_ylabel('EMNIST Accuracy (%)', fontsize=12)
         axes[1].set_title('Accuracy Distribution', fontsize=12)

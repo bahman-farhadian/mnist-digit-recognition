@@ -5,6 +5,7 @@ Convolutional Neural Network Digit Recognition
 
 A portfolio project demonstrating:
 - Building a CNN from scratch with PyTorch
+- Data augmentation for better generalization
 - Training on MNIST (60,000 handwritten digits)
 - Cross-dataset evaluation on EMNIST (different writers)
 - Stability testing with dropout variance analysis
@@ -12,6 +13,7 @@ A portfolio project demonstrating:
 
 CNN Architecture: ~1,024,000 parameters
 - Conv(32) → Conv(64) → FC(320) → Output(10)
+- Data augmentation: rotation (±10°), shift (±10%), scale (±10%)
 
 Usage:
     python main.py                    # Default: 32 epochs, 32 stability runs
@@ -20,7 +22,7 @@ Usage:
 
 Expected Results:
     MNIST Test:  99%+ (same distribution as training)
-    EMNIST Test: 95%+ (different writers - cross-dataset)
+    EMNIST Test: 96%+ (different writers - cross-dataset)
 """
 
 import argparse

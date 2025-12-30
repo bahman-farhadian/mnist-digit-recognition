@@ -5,9 +5,10 @@ A PyTorch convolutional neural network for handwritten digit recognition with cr
 ## Highlights
 
 - **CNN Architecture**: ~1,024,000 parameters with batch normalization
+- **Data Augmentation**: Random rotation, shift, and scale for better generalization
 - **Cross-Dataset Evaluation**: Train on MNIST → Test on EMNIST
 - **Stability Analysis**: Tests model consistency with dropout variance
-- **99%+ MNIST accuracy**, **95%+ EMNIST accuracy**: Strong generalization
+- **99%+ MNIST accuracy**, **96%+ EMNIST accuracy**: Strong generalization
 - **9 visualizations**: Training curves, conv filters, feature maps, stability analysis
 
 ## Why CNN?
@@ -20,7 +21,7 @@ CNNs outperform MLPs on image tasks because they:
 ## Architecture
 
 ```
-Input (1×28×28)
+Input (1×28×28) + Data Augmentation (rotation, shift, scale)
     ↓
 Conv2d(32, 3×3) + BatchNorm + ReLU + MaxPool → 32×14×14
     ↓
@@ -28,7 +29,7 @@ Conv2d(64, 3×3) + BatchNorm + ReLU + MaxPool → 64×7×7
     ↓
 Flatten → 3136
     ↓
-Linear(320) + ReLU + Dropout(0.5)
+Linear(320) + ReLU + Dropout(0.4)
     ↓
 Linear(10) → Class scores
 ```
@@ -53,8 +54,8 @@ python main.py --epochs 10
 | Metric | Value |
 |--------|-------|
 | MNIST Test | 99%+ |
-| EMNIST Test | 95%+ |
-| Stability (std) | < 1% |
+| EMNIST Test | 96%+ |
+| Stability (std) | < 0.5% |
 
 ## Stability Test
 

@@ -71,7 +71,7 @@ class DigitRecognizer(nn.Module):
         
         # Activation and regularization
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.4)  # Reduced from 0.5 for better accuracy
         
         # Batch normalization for stable training
         self.bn1 = nn.BatchNorm2d(32)
@@ -181,7 +181,7 @@ class DigitRecognizer(nn.Module):
             f"    Conv1:  32 filters (3×3) + BatchNorm + ReLU + MaxPool → 32×14×14\n"
             f"    Conv2:  64 filters (3×3) + BatchNorm + ReLU + MaxPool → 64×7×7\n"
             f"    Flatten: 3136\n"
-            f"    FC1:    320 + ReLU + Dropout(0.5)\n"
+            f"    FC1:    320 + ReLU + Dropout(0.4)\n"
             f"    FC2:    {self.num_classes} (output)\n"
             f"  Total parameters: {params:,}\n"
         )

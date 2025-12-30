@@ -82,7 +82,6 @@ class Visualizer:
         epochs = h['epoch']
         
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-        fig.suptitle('Training Progress', fontsize=16, fontweight='bold', y=1.02)
         
         # Loss curve
         axes[0].plot(epochs, h['train_loss'], color=self.colors['primary'], 
@@ -115,7 +114,6 @@ class Visualizer:
     def plot_sample_data(self, filename: str = "02_sample_data.png"):
         """Show sample images from MNIST and EMNIST datasets."""
         fig, axes = plt.subplots(2, 10, figsize=(16, 4))
-        fig.suptitle('Sample Digits: MNIST vs EMNIST', fontsize=16, fontweight='bold', y=1.05)
         
         # MNIST samples (top row)
         mnist_imgs, mnist_lbls = self.data.get_sample_batch("mnist_train", 10)
@@ -125,8 +123,8 @@ class Visualizer:
             axes[0, i].axis('off')
         
         # Row label
-        axes[0, 0].text(-0.3, 0.5, 'MNIST\n(Train)', transform=axes[0, 0].transAxes,
-                       fontsize=11, fontweight='bold', va='center', ha='right',
+        axes[0, 0].text(-0.5, 0.5, 'MNIST\n(Train)', transform=axes[0, 0].transAxes,
+                       fontsize=12, fontweight='bold', va='center', ha='right',
                        color=self.colors['mnist'])
         
         # EMNIST samples (bottom row)
@@ -137,8 +135,8 @@ class Visualizer:
                 axes[1, i].set_title(f'{emnist_lbls[i].item()}', fontsize=12, fontweight='bold')
                 axes[1, i].axis('off')
             
-            axes[1, 0].text(-0.3, 0.5, 'EMNIST\n(Test)', transform=axes[1, 0].transAxes,
-                           fontsize=11, fontweight='bold', va='center', ha='right',
+            axes[1, 0].text(-0.5, 0.5, 'EMNIST\n(Test)', transform=axes[1, 0].transAxes,
+                           fontsize=12, fontweight='bold', va='center', ha='right',
                            color=self.colors['emnist'])
         
         plt.tight_layout()
@@ -151,7 +149,6 @@ class Visualizer:
         )
         
         fig, axes = plt.subplots(6, 8, figsize=(16, 12))
-        fig.suptitle('Model Predictions on MNIST Test Set', fontsize=16, fontweight='bold', y=0.98)
         
         for i in range(48):
             ax = axes[i // 8, i % 8]
@@ -184,7 +181,6 @@ class Visualizer:
             return
         
         fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-        fig.suptitle('Cross-Dataset Generalization Results', fontsize=18, fontweight='bold', y=1.02)
         
         # Bar chart
         mnist_acc = h['mnist_test_accuracy'][-1]
@@ -200,27 +196,26 @@ class Visualizer:
         )
         
         axes[0].set_ylabel('Accuracy (%)', fontsize=13, fontweight='bold')
-        axes[0].set_title('Final Test Accuracy', fontsize=14, fontweight='bold')
-        axes[0].set_ylim(0, 105)
+        axes[0].set_title('Final Test Accuracy', fontsize=14, fontweight='bold', pad=40)
+        axes[0].set_ylim(0, 115)  # More room for labels
         axes[0].spines['top'].set_visible(False)
         axes[0].spines['right'].set_visible(False)
         
-        # Add value labels on bars
+        # Add value labels on bars - inside the bars for cleaner look
         for bar, acc in zip(bars, [mnist_acc, emnist_acc]):
-            axes[0].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1.5,
-                        f'{acc:.1f}%', ha='center', va='bottom', 
-                        fontsize=18, fontweight='bold')
+            axes[0].text(bar.get_x() + bar.get_width()/2, bar.get_height() - 5,
+                        f'{acc:.1f}%', ha='center', va='top', 
+                        fontsize=20, fontweight='bold', color='white')
         
-        # Add horizontal line for reference
-        axes[0].axhline(y=99, color='gray', linestyle='--', alpha=0.5, linewidth=1)
-        axes[0].text(1.3, 99, '99%', fontsize=10, color='gray', va='center')
+        # Hide y-axis above 100
+        axes[0].set_yticks([0, 20, 40, 60, 80, 100])
         
         # Training curve
         epochs = h['epoch']
         axes[1].plot(epochs, h['mnist_test_accuracy'], color=self.colors['mnist'],
-                    linewidth=2.5, marker='s', markersize=5, label='MNIST Test')
+                    linewidth=2.5, marker='s', markersize=5, label=f"MNIST Test ({mnist_acc:.1f}%)")
         axes[1].plot(epochs, h['emnist_test_accuracy'], color=self.colors['emnist'],
-                    linewidth=2.5, marker='^', markersize=5, label='EMNIST Test')
+                    linewidth=2.5, marker='^', markersize=5, label=f"EMNIST Test ({emnist_acc:.1f}%)")
         
         axes[1].set_xlabel('Epoch', fontsize=13, fontweight='bold')
         axes[1].set_ylabel('Accuracy (%)', fontsize=13, fontweight='bold')
@@ -228,15 +223,6 @@ class Visualizer:
         axes[1].legend(loc='lower right', frameon=True, fancybox=True, shadow=True, fontsize=11)
         axes[1].grid(True, alpha=0.3, linestyle='--')
         axes[1].set_xlim(0, max(epochs) + 1)
-        
-        # Add annotation for final values
-        final_epoch = epochs[-1]
-        axes[1].annotate(f'{mnist_acc:.1f}%', xy=(final_epoch, mnist_acc),
-                        xytext=(final_epoch - 3, mnist_acc + 0.3),
-                        fontsize=11, fontweight='bold', color=self.colors['mnist'])
-        axes[1].annotate(f'{emnist_acc:.1f}%', xy=(final_epoch, emnist_acc),
-                        xytext=(final_epoch - 3, emnist_acc - 0.5),
-                        fontsize=11, fontweight='bold', color=self.colors['emnist'])
         
         plt.tight_layout()
         self._save(filename)
@@ -250,8 +236,6 @@ class Visualizer:
         rows = (num_filters + cols - 1) // cols
         
         fig, axes = plt.subplots(rows, cols, figsize=(14, 7))
-        fig.suptitle('Learned Convolutional Filters (Layer 1)\n32 filters × 3×3 — Edge and Corner Detectors',
-                    fontsize=14, fontweight='bold', y=1.02)
         
         vmax = filters.abs().max().item()
         
@@ -288,45 +272,45 @@ class Visualizer:
         with torch.no_grad():
             fm1, fm2 = self.model.get_feature_maps(image)
         
-        fig = plt.figure(figsize=(16, 12))
-        fig.suptitle(f'CNN Feature Maps — How the Network "Sees" a Digit ({label})',
-                    fontsize=16, fontweight='bold', y=0.98)
+        fig = plt.figure(figsize=(16, 10))
         
         # Original image
-        ax_input = fig.add_axes([0.05, 0.75, 0.12, 0.18])
+        ax_input = fig.add_axes([0.02, 0.72, 0.12, 0.22])
         ax_input.imshow(images[0].squeeze(), cmap='gray')
         ax_input.set_title(f'Input: {label}', fontsize=12, fontweight='bold')
         ax_input.axis('off')
         
-        # Layer 1 feature maps
-        ax_label1 = fig.add_axes([0.25, 0.88, 0.5, 0.05])
-        ax_label1.text(0.5, 0.5, 'Layer 1 Feature Maps (16 of 32) — Low-level Features',
+        # Layer 1 title
+        ax_label1 = fig.add_axes([0.2, 0.90, 0.6, 0.05])
+        ax_label1.text(0.5, 0.5, 'Layer 1 Feature Maps (16 of 32)',
                       ha='center', va='center', fontsize=13, fontweight='bold')
         ax_label1.axis('off')
         
+        # Layer 1 feature maps
         fm1_grid = fm1[0, :16].numpy()
         grid_img1 = np.zeros((2 * 28, 8 * 28))
         for i in range(16):
             r, c = i // 8, i % 8
             grid_img1[r*28:(r+1)*28, c*28:(c+1)*28] = fm1_grid[i]
         
-        ax_fm1 = fig.add_axes([0.1, 0.52, 0.8, 0.35])
+        ax_fm1 = fig.add_axes([0.1, 0.50, 0.8, 0.38])
         ax_fm1.imshow(grid_img1, cmap='hot')
         ax_fm1.axis('off')
         
-        # Layer 2 feature maps
-        ax_label2 = fig.add_axes([0.25, 0.45, 0.5, 0.05])
-        ax_label2.text(0.5, 0.5, 'Layer 2 Feature Maps (16 of 64) — High-level Features',
+        # Layer 2 title
+        ax_label2 = fig.add_axes([0.2, 0.42, 0.6, 0.05])
+        ax_label2.text(0.5, 0.5, 'Layer 2 Feature Maps (16 of 64)',
                       ha='center', va='center', fontsize=13, fontweight='bold')
         ax_label2.axis('off')
         
+        # Layer 2 feature maps
         fm2_grid = fm2[0, :16].numpy()
         grid_img2 = np.zeros((2 * 14, 8 * 14))
         for i in range(16):
             r, c = i // 8, i % 8
             grid_img2[r*14:(r+1)*14, c*14:(c+1)*14] = fm2_grid[i]
         
-        ax_fm2 = fig.add_axes([0.1, 0.08, 0.8, 0.35])
+        ax_fm2 = fig.add_axes([0.1, 0.05, 0.8, 0.35])
         ax_fm2.imshow(grid_img2, cmap='hot')
         ax_fm2.axis('off')
         
@@ -335,7 +319,6 @@ class Visualizer:
     def plot_confusion_matrix(self, filename: str = "07_confusion_matrix.png"):
         """Show confusion matrices with numbers and better styling."""
         fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-        fig.suptitle('Confusion Matrices — Error Analysis', fontsize=16, fontweight='bold', y=1.02)
         
         # MNIST confusion matrix
         cm_mnist = self.trainer.get_confusion_matrix(self.data.mnist_test_loader).numpy()
@@ -404,7 +387,6 @@ class Visualizer:
         all_correct = np.array(all_correct)
         
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-        fig.suptitle('Model Confidence Analysis', fontsize=16, fontweight='bold', y=1.02)
         
         # Confidence distribution
         axes[0].hist(all_probs[all_correct], bins=50, alpha=0.7, 
@@ -472,8 +454,6 @@ class Visualizer:
         num_runs = len(accuracies)
         
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-        fig.suptitle(f'Model Stability Analysis ({num_runs} Test Runs)',
-                    fontsize=16, fontweight='bold', y=1.02)
         
         # Left: Line graph
         runs = np.arange(1, num_runs + 1)
@@ -489,7 +469,7 @@ class Visualizer:
         
         axes[0].set_xlabel('Test Run', fontsize=12, fontweight='bold')
         axes[0].set_ylabel('EMNIST Accuracy (%)', fontsize=12, fontweight='bold')
-        axes[0].set_title('Accuracy Across Test Runs', fontsize=14, fontweight='bold')
+        axes[0].set_title(f'Stability Test ({num_runs} Runs)', fontsize=14, fontweight='bold')
         axes[0].legend(loc='lower right', fontsize=11, frameon=True, fancybox=True)
         axes[0].grid(True, alpha=0.3, linestyle='--')
         axes[0].set_xlim(0, num_runs + 1)

@@ -1,8 +1,8 @@
 """
-Neural Network Digit Recognition Package
+CNN Digit Recognition Package
 
-Train on MNIST, Test on EMNIST (different writers)
-Demonstrates cross-dataset generalization.
+Train CNN on MNIST, test on EMNIST (different writers)
+Demonstrates cross-dataset generalization with convolutional networks.
 """
 
 from .model import DigitRecognizer

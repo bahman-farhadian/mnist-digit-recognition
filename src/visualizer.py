@@ -1,12 +1,13 @@
 """
-Visualization Module for Neural Network Analysis
+Visualization Module for CNN Analysis
 
 Creates educational visualizations showing:
 - Training progress (loss and accuracy curves)
 - Sample data from both MNIST and EMNIST datasets
 - Model predictions with confidence scores
 - Cross-dataset performance comparison
-- What patterns neurons have learned
+- Convolutional filter patterns (what the CNN looks for)
+- Feature maps (how the CNN sees digits)
 - Confusion matrices for error analysis
 - Confidence calibration analysis
 """
@@ -21,7 +22,7 @@ from .trainer import Trainer
 
 class Visualizer:
     """
-    Creates visualizations for understanding neural network behavior.
+    Creates visualizations for understanding CNN behavior.
     
     All visualizations are saved as high-quality PNG images.
     """
@@ -193,40 +194,44 @@ class Visualizer:
         plt.tight_layout()
         self._save(filename)
     
-    def plot_neuron_weights(self, filename: str = "05_neuron_weights.png", num_neurons: int = 64):
+    def plot_conv_filters(self, filename: str = "05_conv_filters.png"):
         """
-        Visualize what patterns hidden neurons learned to detect.
+        Visualize convolutional filters from the first layer.
         
-        Each 28×28 image shows one neuron's input weights:
-        - Red pixels: Activate the neuron (positive weights)
-        - Blue pixels: Inhibit the neuron (negative weights)
+        These 3×3 filters show what basic patterns the CNN looks for:
+        - Edge detectors (horizontal, vertical, diagonal)
+        - Corner detectors
+        - Blob detectors
         """
-        weights = self.model.get_hidden_weights()  # [hidden_size, 784]
-        num_neurons = min(num_neurons, weights.shape[0])
+        filters = self.model.get_conv_filters(layer=1)  # [32, 1, 3, 3]
+        num_filters = filters.shape[0]
         
+        # Create grid
         cols = 8
-        rows = (num_neurons + cols - 1) // cols
+        rows = (num_filters + cols - 1) // cols
         
         fig, axes = plt.subplots(rows, cols, figsize=(16, 2 * rows))
         fig.suptitle(
-            f'Hidden Neuron Weight Patterns ({num_neurons} of {self.model.hidden_size})\n'
-            'Red = Activating, Blue = Inhibiting',
+            f'First Layer Convolutional Filters ({num_filters} filters, 3×3 each)\n'
+            'These detect basic features like edges and corners',
             fontsize=12
         )
         
-        vmax = weights[:num_neurons].abs().max().item() * 0.7
+        vmax = filters.abs().max().item()
         
-        for i in range(num_neurons):
+        for i in range(num_filters):
             row, col = i // cols, i % cols
             ax = axes[row, col] if rows > 1 else axes[col]
             
-            pattern = weights[i].reshape(28, 28).numpy()
-            ax.imshow(pattern, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
-            ax.set_title(f'N{i}', fontsize=8)
+            # Get filter and squeeze to 2D
+            filt = filters[i, 0].numpy()  # [3, 3]
+            
+            ax.imshow(filt, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
+            ax.set_title(f'F{i}', fontsize=8)
             ax.axis('off')
         
         # Hide unused subplots
-        for i in range(num_neurons, rows * cols):
+        for i in range(num_filters, rows * cols):
             row, col = i // cols, i % cols
             ax = axes[row, col] if rows > 1 else axes[col]
             ax.axis('off')
@@ -234,49 +239,70 @@ class Visualizer:
         plt.tight_layout()
         self._save(filename)
     
-    def plot_activations_by_digit(self, filename: str = "06_activations_by_digit.png"):
-        """Show how different digits activate different neurons."""
-        fig = plt.figure(figsize=(16, 10))
+    def plot_feature_maps(self, filename: str = "06_feature_maps.png"):
+        """
+        Show how the CNN sees a sample digit through its feature maps.
         
-        # Show one sample of each digit
-        for digit in range(10):
-            ax = fig.add_subplot(3, 10, digit + 1)
-            image, _ = self.data.get_samples_by_digit(digit, num_samples=1)
-            ax.imshow(image[0].squeeze(), cmap='gray')
-            ax.set_title(f'{digit}', fontsize=12)
-            ax.axis('off')
+        Feature maps show which parts of the image activate each filter.
+        """
+        # Get a sample image
+        images, labels = self.data.get_sample_batch("mnist_test", 1)
+        image = images[0:1].to(self.trainer.device)
+        label = labels[0].item()
         
-        # Collect activations
-        activations = []
+        # Get feature maps
         self.model.eval()
         with torch.no_grad():
-            for digit in range(10):
-                image, _ = self.data.get_samples_by_digit(digit, num_samples=1)
-                image = image.to(self.trainer.device)
-                acts = self.model.get_hidden_activations(image)
-                activations.append(acts.cpu().squeeze().numpy())
+            fm1, fm2 = self.model.get_feature_maps(image)
         
-        activations = np.array(activations)  # [10, hidden_size]
+        fig = plt.figure(figsize=(16, 10))
         
-        # Heatmap
+        # Original image
+        ax = fig.add_subplot(3, 1, 1)
+        ax.text(0.5, 0.5, f'Input Image (Digit: {label})', 
+               ha='center', va='center', fontsize=14, transform=ax.transAxes)
+        ax.axis('off')
+        
+        # Show original on the left
+        ax_img = fig.add_axes([0.05, 0.7, 0.15, 0.25])
+        ax_img.imshow(images[0].squeeze(), cmap='gray')
+        ax_img.set_title(f'Digit {label}', fontsize=12)
+        ax_img.axis('off')
+        
+        # First layer feature maps (show first 16)
         ax = fig.add_subplot(3, 1, 2)
-        im = ax.imshow(activations, cmap='hot', aspect='auto')
-        ax.set_xlabel('Neuron Index', fontsize=11)
-        ax.set_ylabel('Digit', fontsize=11)
-        ax.set_yticks(range(10))
-        ax.set_title('Neuron Activation Patterns\n(Yellow = Strong Activation)', fontsize=12)
-        plt.colorbar(im, ax=ax, label='Activation')
+        ax.set_title('Layer 1 Feature Maps (first 16 of 32)\nBright = Strong activation', fontsize=12)
+        ax.axis('off')
         
-        # Average activation
+        # Create grid of feature maps
+        fm1_grid = fm1[0, :16].numpy()  # [16, 28, 28]
+        grid_img = np.zeros((2 * 28, 8 * 28))
+        for i in range(16):
+            r, c = i // 8, i % 8
+            grid_img[r*28:(r+1)*28, c*28:(c+1)*28] = fm1_grid[i]
+        
+        ax_fm1 = fig.add_axes([0.1, 0.4, 0.8, 0.25])
+        ax_fm1.imshow(grid_img, cmap='hot')
+        ax_fm1.axis('off')
+        
+        # Second layer feature maps (show first 16)
         ax = fig.add_subplot(3, 1, 3)
-        mean_act = activations.mean(axis=0)
-        ax.bar(range(len(mean_act)), mean_act, color='steelblue', alpha=0.7)
-        ax.set_xlabel('Neuron Index', fontsize=11)
-        ax.set_ylabel('Average Activation', fontsize=11)
-        ax.set_title('Neuron Utilization', fontsize=12)
+        ax.set_title('Layer 2 Feature Maps (first 16 of 64)\nMore abstract features', fontsize=12)
+        ax.axis('off')
         
-        plt.tight_layout()
-        self._save(filename)
+        fm2_grid = fm2[0, :16].numpy()  # [16, 14, 14]
+        grid_img2 = np.zeros((2 * 14, 8 * 14))
+        for i in range(16):
+            r, c = i // 8, i % 8
+            grid_img2[r*14:(r+1)*14, c*14:(c+1)*14] = fm2_grid[i]
+        
+        ax_fm2 = fig.add_axes([0.1, 0.08, 0.8, 0.25])
+        ax_fm2.imshow(grid_img2, cmap='hot')
+        ax_fm2.axis('off')
+        
+        plt.savefig(self.output_dir / filename, dpi=150, bbox_inches='tight', facecolor='white')
+        plt.close()
+        print(f"  Saved: {self.output_dir / filename}")
     
     def plot_confusion_matrix(self, filename: str = "07_confusion_matrix.png"):
         """Show confusion matrices for MNIST and EMNIST."""
@@ -375,8 +401,8 @@ class Visualizer:
         self.plot_sample_data()
         self.plot_predictions()
         self.plot_cross_dataset_comparison()
-        self.plot_neuron_weights()
-        self.plot_activations_by_digit()
+        self.plot_conv_filters()
+        self.plot_feature_maps()
         self.plot_confusion_matrix()
         self.plot_confidence_analysis()
         
@@ -385,17 +411,4 @@ class Visualizer:
 
 
 if __name__ == "__main__":
-    print("Testing Visualizer...")
-    from .model import DigitRecognizer
-    from .data import DataManager
-    from .trainer import Trainer
-    
-    model = DigitRecognizer(hidden_size=128)
-    data = DataManager(batch_size=64)
-    trainer = Trainer(model, data)
-    trainer.train(epochs=1)
-    
-    viz = Visualizer(trainer, output_dir="outputs")
-    viz.generate_all()
-    
-    print("\n✓ Visualizer test complete!")
+    print("Visualizer module - run main.py to generate visualizations")

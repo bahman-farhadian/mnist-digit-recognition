@@ -1,97 +1,105 @@
-# Neural Network Digit Recognition
+# CNN Digit Recognition
 
-A portfolio project demonstrating deep learning fundamentals with PyTorch: training a neural network to recognize handwritten digits and evaluating cross-dataset generalization.
+A PyTorch convolutional neural network for handwritten digit recognition with cross-dataset evaluation. Trains on MNIST and evaluates generalization on EMNIST (different writers).
 
 ## Highlights
 
-- **Train on MNIST** → **Test on EMNIST**: Cross-dataset evaluation proves generalization
-- **1024 hidden neurons**: Single hidden layer with 814,090 learnable parameters
-- **~98% MNIST accuracy**, **~85-95% EMNIST accuracy**: Strong cross-dataset performance
-- **Every line commented**: Understand exactly what each piece of code does
-- **8 visualizations**: See what the network actually learns
+- **CNN Architecture**: 2 conv layers + 2 FC layers with batch normalization
+- **Cross-Dataset Evaluation**: Train on MNIST → Test on EMNIST
+- **99%+ MNIST accuracy**, **90%+ EMNIST accuracy**: Strong generalization
+- **8 visualizations**: Training curves, conv filters, feature maps, confusion matrices
 
-## Cross-Dataset Evaluation
+## Why CNN?
 
-This project trains on **MNIST** (60,000 images) and tests on both:
-- **MNIST Test** (10,000 images): Same distribution as training
-- **EMNIST-Digits** (40,000 images): Different writers from the same NIST database
+CNNs outperform MLPs on image tasks because they:
+- Learn **local features** (edges, curves) that transfer across datasets
+- Have **translation invariance** - digit position matters less
+- **Share weights** spatially - fewer parameters, less overfitting
 
-EMNIST uses the same visual format as MNIST (28×28, centered, grayscale) but comes from different writers. High EMNIST accuracy without ever training on it proves the model learned **general digit features**, not just MNIST-specific patterns.
+## Architecture
+
+```
+Input (1×28×28)
+    ↓
+Conv2d(32, 3×3) + BatchNorm + ReLU + MaxPool → 32×14×14
+    ↓
+Conv2d(64, 3×3) + BatchNorm + ReLU + MaxPool → 64×7×7
+    ↓
+Flatten → 3136
+    ↓
+Linear(256) + ReLU + Dropout(0.5)
+    ↓
+Linear(10) → Class scores
+```
+
+**Total parameters**: ~850K
 
 ## Quick Start
 
 ```bash
-# Clone and enter directory
-cd mnist-digit-recognition
-
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-
 # Install dependencies
-pip install -r requirements.txt
+pip install torch torchvision numpy matplotlib tqdm
 
-# Run training with default settings (5 epochs, 1024 neurons)
+# Run training (10 epochs default)
 python main.py
 
-# Or customize
-python main.py --epochs 10 --hidden-size 2048
+# Train longer for best results
+python main.py --epochs 20
 ```
 
 ## Expected Results
 
-After 5 epochs with 1024 hidden neurons:
-
 | Dataset | Accuracy | Meaning |
 |---------|----------|---------|
-| MNIST Test | 97-98% | Model learned from training data |
-| EMNIST Test | 85-95% | Model generalizes to new writers |
+| MNIST Test | 99%+ | Learned from training data |
+| EMNIST Test | 90-95% | Generalizes to new writers |
 
-The gap between MNIST and EMNIST is expected and indicates the model isn't overfitting to MNIST-specific patterns.
+## Requirements
+
+- Python 3.8+
+- PyTorch 2.0+ (with CUDA for GPU support)
+- Linux (tested on Ubuntu)
+
+### GPU Support
+
+The code automatically detects CUDA GPUs on Linux. For GPU training:
+
+```bash
+# Check if GPU is available
+python -c "import torch; print(torch.cuda.is_available())"
+
+# Should print: True
+```
 
 ## Project Structure
 
 ```
 mnist-digit-recognition/
-├── main.py              # Single entry point - run this!
-├── README.md            # This file
-├── requirements.txt     # Dependencies
+├── main.py              # Entry point
+├── README.md            
+├── requirements.txt     
 ├── src/
-│   ├── __init__.py      # Package init
-│   ├── model.py         # Neural network architecture
-│   ├── data.py          # Dataset loading (MNIST + EMNIST)
+│   ├── __init__.py
+│   ├── model.py         # CNN architecture
+│   ├── data.py          # MNIST + EMNIST loading
 │   ├── trainer.py       # Training loop
 │   └── visualizer.py    # All visualizations
-└── outputs/             # Generated files go here
-    ├── model.pt         # Saved model weights
-    └── *.png            # Visualization images
+└── outputs/
+    ├── model.pt         # Saved weights
+    └── *.png            # Visualizations
 ```
 
-## Network Architecture
-
-```
-Input Layer:    784 neurons (28×28 flattened image)
-                    ↓
-Hidden Layer:   1024 neurons + ReLU activation
-                    ↓
-Output Layer:   10 neurons (one per digit 0-9)
-                    ↓
-                Softmax → Probabilities
-```
-
-**Total parameters**: 814,090 (784×1024 + 1024 + 1024×10 + 10)
-
-## Generated Visualizations
+## Visualizations
 
 | File | Description |
 |------|-------------|
-| `01_training_history.png` | Loss and accuracy curves over epochs |
-| `02_sample_data.png` | Side-by-side MNIST vs EMNIST samples |
-| `03_predictions.png` | Model predictions with confidence scores |
-| `04_cross_dataset_eval.png` | MNIST vs EMNIST accuracy comparison |
-| `05_neuron_weights.png` | What patterns each neuron detects |
-| `06_activations_by_digit.png` | How different digits activate neurons |
-| `07_confusion_matrix.png` | Which digits get confused |
+| `01_training_history.png` | Loss and accuracy curves |
+| `02_sample_data.png` | MNIST vs EMNIST samples |
+| `03_predictions.png` | Predictions with confidence |
+| `04_cross_dataset_evaluation.png` | MNIST vs EMNIST comparison |
+| `05_conv_filters.png` | Learned 3×3 filters |
+| `06_feature_maps.png` | How CNN sees digits |
+| `07_confusion_matrix.png` | Error analysis |
 | `08_confidence_analysis.png` | Confidence calibration |
 
 ## Command Line Options
@@ -100,47 +108,14 @@ Output Layer:   10 neurons (one per digit 0-9)
 python main.py [OPTIONS]
 
 Options:
-  --epochs INT        Training epochs (default: 5)
-  --batch-size INT    Batch size (default: 64)
-  --learning-rate FLOAT  Adam learning rate (default: 0.001)
-  --hidden-size INT   Hidden layer neurons (default: 1024)
-  --output-dir PATH   Output directory (default: outputs)
-  --no-viz           Skip visualization generation
-  --no-save          Skip saving model
+  --epochs INT          Training epochs (default: 10)
+  --batch-size INT      Batch size (default: 64)
+  --learning-rate FLOAT Learning rate (default: 0.001)
+  --output-dir PATH     Output directory (default: outputs)
+  --no-viz              Skip visualizations
+  --no-save             Skip saving model
 ```
-
-## Understanding the Code
-
-Each file is heavily commented to explain:
-
-- **model.py**: Neural network architecture, weight initialization, forward pass
-- **data.py**: How datasets are loaded and preprocessed
-- **trainer.py**: The training loop, backpropagation, evaluation
-- **visualizer.py**: How each visualization is created
-
-## Key Concepts Demonstrated
-
-1. **Forward Propagation**: Input → Hidden → Output with ReLU activation
-2. **Backpropagation**: Computing gradients to update weights
-3. **Cross-Entropy Loss**: Standard loss for multi-class classification
-4. **Adam Optimizer**: Adaptive learning rate optimization
-5. **Mini-batch Training**: Processing 64 images at a time for efficiency
-6. **Cross-Dataset Generalization**: Testing on unseen data distribution
-
-## Dependencies
-
-- `torch>=2.0.0` - Deep learning framework
-- `torchvision>=0.15.0` - Dataset utilities
-- `numpy>=1.24.0` - Numerical computing
-- `matplotlib>=3.7.0` - Visualization
-- `tqdm>=4.65.0` - Progress bars
 
 ## License
 
-MIT License - Feel free to use this code for learning and portfolio projects.
-
-## Acknowledgments
-
-- MNIST dataset: Yann LeCun et al.
-- EMNIST dataset: Cohen et al. (2017)
-- PyTorch: Meta AI Research
+MIT License

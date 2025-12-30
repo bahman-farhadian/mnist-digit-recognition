@@ -66,8 +66,8 @@ class DigitRecognizer(nn.Module):
         # After conv1 + pool: 28×28 → 14×14
         # After conv2 + pool: 14×14 → 7×7
         # Flattened size: 64 channels × 7 × 7 = 3136
-        self.fc1 = nn.Linear(64 * 7 * 7, 256)
-        self.fc2 = nn.Linear(256, num_classes)
+        self.fc1 = nn.Linear(64 * 7 * 7, 320)
+        self.fc2 = nn.Linear(320, num_classes)
         
         # Activation and regularization
         self.relu = nn.ReLU()
@@ -181,7 +181,7 @@ class DigitRecognizer(nn.Module):
             f"    Conv1:  32 filters (3×3) + BatchNorm + ReLU + MaxPool → 32×14×14\n"
             f"    Conv2:  64 filters (3×3) + BatchNorm + ReLU + MaxPool → 64×7×7\n"
             f"    Flatten: 3136\n"
-            f"    FC1:    256 + ReLU + Dropout(0.5)\n"
+            f"    FC1:    320 + ReLU + Dropout(0.5)\n"
             f"    FC2:    {self.num_classes} (output)\n"
             f"  Total parameters: {params:,}\n"
         )

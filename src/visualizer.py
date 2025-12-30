@@ -408,6 +408,86 @@ class Visualizer:
         
         print("-" * 50)
         print(f"All visualizations saved to {self.output_dir}/")
+    
+    def plot_stability_results(self, stability_results: dict):
+        """
+        Generate stability visualizations: line graph and box plot.
+        
+        Args:
+            stability_results: Dictionary from trainer.stability_test()
+        """
+        accuracies = stability_results['accuracies']
+        if not accuracies:
+            print("  Skipped: No stability data")
+            return
+        
+        import numpy as np
+        accuracies = np.array(accuracies)
+        num_runs = len(accuracies)
+        
+        # Create figure with two subplots
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+        fig.suptitle(f'Model Stability Test ({num_runs} runs with dropout enabled)', fontsize=14)
+        
+        # Left: Line graph
+        runs = np.arange(1, num_runs + 1)
+        axes[0].plot(runs, accuracies, 'b-o', linewidth=1.5, markersize=4, alpha=0.7)
+        axes[0].axhline(y=stability_results['mean'], color='r', linestyle='--', 
+                       linewidth=2, label=f"Mean: {stability_results['mean']:.2f}%")
+        axes[0].fill_between(runs, 
+                            stability_results['mean'] - stability_results['std'],
+                            stability_results['mean'] + stability_results['std'],
+                            alpha=0.2, color='red', label=f"±1 Std: {stability_results['std']:.2f}%")
+        axes[0].set_xlabel('Test Run', fontsize=12)
+        axes[0].set_ylabel('EMNIST Accuracy (%)', fontsize=12)
+        axes[0].set_title('Accuracy Across Multiple Test Runs', fontsize=12)
+        axes[0].legend(fontsize=10, loc='lower right')
+        axes[0].grid(True, alpha=0.3)
+        axes[0].set_ylim(min(accuracies) - 2, max(accuracies) + 2)
+        
+        # Right: Box plot
+        box_data = axes[1].boxplot(accuracies, patch_artist=True, widths=0.6)
+        box_data['boxes'][0].set_facecolor('steelblue')
+        box_data['boxes'][0].set_alpha(0.7)
+        box_data['medians'][0].set_color('red')
+        box_data['medians'][0].set_linewidth(2)
+        
+        # Add individual points
+        x_jitter = np.random.normal(1, 0.04, size=len(accuracies))
+        axes[1].scatter(x_jitter, accuracies, alpha=0.5, color='darkblue', s=20, zorder=3)
+        
+        # Add statistics text
+        stats_text = (
+            f"Mean: {stability_results['mean']:.2f}%\n"
+            f"Std:  {stability_results['std']:.2f}%\n"
+            f"Min:  {stability_results['min']:.2f}%\n"
+            f"Max:  {stability_results['max']:.2f}%"
+        )
+        axes[1].text(1.4, stability_results['mean'], stats_text, fontsize=10,
+                    verticalalignment='center', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        
+        axes[1].set_ylabel('EMNIST Accuracy (%)', fontsize=12)
+        axes[1].set_title('Accuracy Distribution', fontsize=12)
+        axes[1].set_xticks([1])
+        axes[1].set_xticklabels(['EMNIST Test'])
+        axes[1].set_ylim(min(accuracies) - 2, max(accuracies) + 2)
+        axes[1].grid(True, alpha=0.3, axis='y')
+        
+        plt.tight_layout()
+        self._save("09_stability_test.png")
+        
+        # Print interpretation
+        std = stability_results['std']
+        if std < 0.5:
+            stability = "Excellent"
+        elif std < 1.0:
+            stability = "Good"
+        elif std < 2.0:
+            stability = "Moderate"
+        else:
+            stability = "High variance"
+        
+        print(f"  Stability: {stability} (std={std:.2f}%)")
 
 
 if __name__ == "__main__":

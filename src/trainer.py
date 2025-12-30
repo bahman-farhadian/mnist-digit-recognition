@@ -247,6 +247,74 @@ class Trainer:
         
         return confusion
     
+    def stability_test(self, num_runs: int = 32) -> dict:
+        """
+        Run stability test on EMNIST with dropout enabled.
+        
+        This tests model stability by running inference multiple times
+        with dropout active (model.train() mode). Variance in results
+        indicates how sensitive the model is to dropout randomness.
+        
+        A stable model should have low variance across runs.
+        
+        Args:
+            num_runs: Number of test runs (default: 32)
+            
+        Returns:
+            Dictionary with accuracies list and statistics
+        """
+        if self.data.emnist_test_loader is None:
+            print("  EMNIST not available for stability test")
+            return {'accuracies': [], 'mean': 0, 'std': 0, 'min': 0, 'max': 0}
+        
+        print(f"\nRunning stability test ({num_runs} runs with dropout enabled)...")
+        
+        accuracies = []
+        
+        for run in range(num_runs):
+            # Enable training mode to activate dropout
+            self.model.train()
+            
+            correct = 0
+            total = 0
+            
+            with torch.no_grad():
+                for images, labels in self.data.emnist_test_loader:
+                    images = images.to(self.device)
+                    outputs = self.model(images)
+                    _, predicted = outputs.max(dim=1)
+                    correct += predicted.eq(labels.to(self.device)).sum().item()
+                    total += labels.size(0)
+            
+            accuracy = 100. * correct / total
+            accuracies.append(accuracy)
+            
+            # Progress indicator
+            if (run + 1) % 10 == 0 or run == 0:
+                print(f"  Run {run + 1}/{num_runs}: {accuracy:.2f}%")
+        
+        # Back to eval mode
+        self.model.eval()
+        
+        # Calculate statistics
+        import numpy as np
+        accuracies_np = np.array(accuracies)
+        
+        results = {
+            'accuracies': accuracies,
+            'mean': float(accuracies_np.mean()),
+            'std': float(accuracies_np.std()),
+            'min': float(accuracies_np.min()),
+            'max': float(accuracies_np.max())
+        }
+        
+        print(f"\nStability Test Results:")
+        print(f"  Mean:  {results['mean']:.2f}%")
+        print(f"  Std:   {results['std']:.2f}%")
+        print(f"  Range: {results['min']:.2f}% - {results['max']:.2f}%")
+        
+        return results
+    
     def save_model(self, path: str):
         """
         Save trained model weights.
@@ -279,11 +347,11 @@ if __name__ == "__main__":
     from .model import DigitRecognizer
     from .data import DataManager
     
-    # Quick test with small model and 1 epoch
-    model = DigitRecognizer(hidden_size=128)
+    # Quick test with CNN and 1 epoch
+    model = DigitRecognizer()
     data = DataManager(batch_size=64)
     trainer = Trainer(model, data)
     trainer.train(epochs=1)
     
-    print(f"\nHistory: {trainer.history}")
+    print(f"\nHistory keys: {trainer.history.keys()}")
     print("\n✓ Trainer test complete!")

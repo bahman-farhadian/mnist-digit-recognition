@@ -113,6 +113,51 @@ mnist-digit-recognition/
 | `08_confidence_analysis.png` | Confidence calibration |
 | `09_stability_test.png` | Stability line graph + box plot |
 
+### Training Progress
+Loss and accuracy curves over epochs.
+
+![Training History](readme_images/01_training_history.png)
+
+### Sample Data
+MNIST vs EMNIST samples — comparing training and cross-dataset test data.
+
+![Sample Data](readme_images/02_sample_data.png)
+
+### Model Predictions
+Model predictions with confidence scores on MNIST test set.
+
+![Predictions](readme_images/03_predictions.png)
+
+### Cross-Dataset Generalization
+Performance comparison between MNIST and EMNIST datasets.
+
+![Cross Dataset Evaluation](readme_images/04_cross_dataset_evaluation.png)
+
+### Convolutional Filters
+Learned 3×3 filters from the first convolutional layer — edge and corner detectors.
+
+![Conv Filters](readme_images/05_conv_filters.png)
+
+### Feature Maps
+How the CNN "sees" digits — activations at each layer.
+
+![Feature Maps](readme_images/06_feature_maps.png)
+
+### Confusion Matrix
+Error analysis showing prediction patterns for both datasets.
+
+![Confusion Matrix](readme_images/07_confusion_matrix.png)
+
+### Confidence Analysis
+Confidence calibration — relationship between prediction confidence and accuracy.
+
+![Confidence Analysis](readme_images/08_confidence_analysis.png)
+
+### Stability Analysis
+Model stability test — accuracy distribution across multiple test runs with dropout enabled.
+
+![Stability Test](readme_images/09_stability_test.png)
+
 ## Command Line Options
 
 ```bash

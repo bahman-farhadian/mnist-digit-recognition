@@ -40,7 +40,7 @@ Linear(10) → Class scores
 
 ```bash
 # Install dependencies
-pip install torch torchvision numpy matplotlib tqdm
+pip install torch torchvision numpy matplotlib tqdm pillow fastapi uvicorn
 
 # Run training (32 epochs default + stability test)
 python main.py
@@ -48,6 +48,21 @@ python main.py
 # Quick test with fewer epochs
 python main.py --epochs 10
 ```
+
+## Web Demo
+
+After training, launch the interactive web demo:
+
+```bash
+python app.py
+```
+
+Open http://localhost:8000 in your browser to:
+- Draw digits on a canvas
+- Get real-time predictions from the CNN
+- Track model accuracy with user feedback
+
+![Web Demo](readme_images/web_demo.png)
 
 ## Expected Results
 
@@ -85,7 +100,8 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 ```
 mnist-digit-recognition/
-├── main.py              # Entry point
+├── main.py              # Training entry point
+├── app.py               # Web demo (FastAPI)
 ├── README.md            
 ├── requirements.txt     
 ├── src/

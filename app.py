@@ -19,7 +19,7 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-from PIL import Image, ImageOps
+from PIL import Image
 import numpy as np
 
 try:
@@ -99,34 +99,39 @@ def preprocess_image(image_data: str) -> torch.Tensor:
     # Open image
     img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
     
-    # Create white background and paste image
+    # Create black background and paste image (preserving white strokes)
     background = Image.new("RGB", img.size, (0, 0, 0))
     background.paste(img, mask=img.split()[3])
     
-    # Convert to grayscale
+    # Convert to grayscale - now we have white digit on black background
     img = background.convert("L")
     
-    # Invert (canvas is white-on-black, MNIST is white digit on black)
-    img = ImageOps.invert(img)
+    # DO NOT INVERT - canvas is already white-on-black like MNIST
     
-    # Find bounding box and crop
+    # Find bounding box and crop to digit
     bbox = img.getbbox()
     if bbox:
         img = img.crop(bbox)
-        # Add padding
+        
+        # Add padding (MNIST digits have ~4px padding)
         width, height = img.size
         max_dim = max(width, height)
-        # Create square image with padding
-        new_img = Image.new("L", (max_dim + 40, max_dim + 40), 0)
-        paste_x = (max_dim + 40 - width) // 2
-        paste_y = (max_dim + 40 - height) // 2
+        
+        # Create square image with padding (20% on each side)
+        padding = int(max_dim * 0.4)
+        new_size = max_dim + padding
+        new_img = Image.new("L", (new_size, new_size), 0)
+        
+        # Center the digit
+        paste_x = (new_size - width) // 2
+        paste_y = (new_size - height) // 2
         new_img.paste(img, (paste_x, paste_y))
         img = new_img
     
-    # Resize to 28x28
+    # Resize to 28x28 (MNIST size)
     img = img.resize((28, 28), Image.Resampling.LANCZOS)
     
-    # Convert to tensor and normalize (MNIST normalization)
+    # Convert to tensor and normalize (MNIST mean=0.1307, std=0.3081)
     img_array = np.array(img, dtype=np.float32) / 255.0
     img_tensor = torch.tensor(img_array).unsqueeze(0).unsqueeze(0)
     img_tensor = (img_tensor - 0.1307) / 0.3081
@@ -461,7 +466,7 @@ HTML_TEMPLATE = """
     <p class="footer">
         Created by <strong>Bahman Farhadian</strong> • 
         CNN trained on MNIST • 
-        <a href="https://github.com/bahman" target="_blank">GitHub</a>
+        <a href="https://github.com/bahman-farhadian" target="_blank">GitHub</a>
     </p>
     
     <script>
@@ -474,7 +479,7 @@ HTML_TEMPLATE = """
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 18;
+        ctx.lineWidth = 15;  // Slightly thinner for better MNIST matching
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         

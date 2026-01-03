@@ -1,9 +1,32 @@
 # Neural Network Digit Recognition - Dependencies
+# ================================================
+
+# PyTorch - Choose ONE based on your GPU:
+# ------------------------------------------------
+# Option A: Modern GPUs (RTX 20xx, 30xx, 40xx, A100, etc.)
+#           CUDA capability >= 7.0
 torch>=2.0.0
 torchvision>=0.15.0
+
+# Option B: Older GPUs (GTX 1080, 1070, 1060, Titan X Pascal, etc.)
+#           CUDA capability 6.x (Pascal architecture)
+#           Uncomment these and comment out Option A:
+# torch==1.13.1+cu116
+# torchvision==0.14.1+cu116
+# Install with: pip install torch==1.13.1+cu116 torchvision==0.14.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
+
+# Option C: CPU only (no GPU)
+# torch==2.0.0
+# torchvision==0.15.0
+# Install with: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# ------------------------------------------------
+
+# Other dependencies
 numpy>=1.24.0
 matplotlib>=3.7.0
 tqdm>=4.65.0
 pillow>=9.5.0
+
+# Web demo dependencies
 fastapi>=0.100.0
 uvicorn>=0.22.0

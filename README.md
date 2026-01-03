@@ -83,9 +83,9 @@ The stability test produces a line graph and box plot showing accuracy distribut
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.8+ (Python 3.10 recommended for older GPUs)
 - PyTorch 2.0+ (with CUDA for GPU support)
-- Linux (tested on Ubuntu)
+- Linux (tested on Ubuntu and Debian)
 
 ### GPU Support
 
@@ -94,6 +94,66 @@ The code automatically detects CUDA GPUs. For GPU training on Linux:
 ```bash
 # Check if GPU is available
 python -c "import torch; print(torch.cuda.is_available())"
+```
+
+### GPU Compatibility
+
+| GPU Series | CUDA Capability | PyTorch Version | Notes |
+|------------|-----------------|-----------------|-------|
+| RTX 40xx (4090, 4080, etc.) | 8.9 | 2.0+ | Default installation |
+| RTX 30xx (3090, 3080, etc.) | 8.6 | 2.0+ | Default installation |
+| RTX 20xx (2080, 2070, etc.) | 7.5 | 2.0+ | Default installation |
+| GTX 10xx (1080, 1070, etc.) | 6.1 | 1.13.1 | See instructions below |
+
+### Older GPUs (GTX 1080, 1070, 1060, Titan X Pascal)
+
+PyTorch 2.0+ dropped support for CUDA capability 6.x (Pascal architecture). If you have an older GPU, follow these instructions:
+
+**Option A: Using Python 3.10 (Recommended)**
+
+Debian 12 ships with Python 3.11, but PyTorch 1.13.1 wheels for torchvision are only available for Python 3.10. Use pyenv to install Python 3.10:
+
+```bash
+# Install build dependencies
+apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev \
+libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
+libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev git
+
+# Install pyenv
+curl https://pyenv.run | bash
+
+# Add to shell (add these lines to ~/.bashrc)
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+
+# Reload shell
+source ~/.bashrc
+
+# Install Python 3.10
+pyenv install 3.10.13
+
+# Create virtual environment with Python 3.10
+~/.pyenv/versions/3.10.13/bin/python -m venv venv310
+source venv310/bin/activate
+
+# Install PyTorch 1.13.1 with CUDA 11.6 support
+pip install torch==1.13.1+cu116 torchvision==0.14.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
+
+# IMPORTANT: Install numpy<2 (NumPy 2.x is incompatible with PyTorch 1.13.1)
+pip install "numpy<2"
+
+# Install other dependencies
+pip install matplotlib tqdm pillow fastapi uvicorn
+```
+
+**Option B: CPU Only (No GPU)**
+
+If you don't need GPU acceleration:
+
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install numpy matplotlib tqdm pillow fastapi uvicorn
 ```
 
 ## Project Structure
